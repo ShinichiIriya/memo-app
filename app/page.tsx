@@ -12,6 +12,7 @@ export default function Home() {
   const [keyword, setKeyword] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [deepeningId, setDeepeningId] = useState<number | null>(null)
   const [memos, setMemos] = useState<any[]>([])
 
   async function loadMemos() {
@@ -34,7 +35,7 @@ export default function Home() {
     const res = await fetch('/api/deepen', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keyword }),
+      body: JSON.stringify({ keyword, mode: 'normal' }),
     })
     const result = await res.json()
 
@@ -50,6 +51,42 @@ export default function Home() {
     setKeyword('')
     setLoading(false)
     loadMemos()
+  }
+
+  async function deepenMore(memo: any) {
+    setDeepeningId(memo.id)
+
+    const res = await fetch('/api/deepen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        keyword: memo.keyword,
+        mode: 'more',
+        existing: memo.summary,
+      }),
+    })
+    const result = await res.json()
+
+    const newSummary = memo.summary + '\n\n【追加深掘り】\n' + result.summary
+    const newExamples = memo.examples
+      ? memo.examples + '||' + result.examples.join('||')
+      : result.examples.join('||')
+    const newLinks = memo.links
+      ? memo.links + '||' + result.links.join('||')
+      : result.links.join('||')
+    const newTags = memo.tags
+      ? memo.tags + ',' + result.tags.join(',')
+      : result.tags.join(',')
+
+    await supabase.from('memos').update({
+      summary: newSummary,
+      examples: newExamples,
+      links: newLinks,
+      tags: newTags,
+    }).eq('id', memo.id)
+
+    setDeepeningId(null)
+    await loadMemos()
   }
 
   async function deleteMemo(id: number) {
@@ -97,7 +134,7 @@ export default function Home() {
               </button>
             </div>
 
-            <p className="text-sm text-gray-600 mb-3">{memo.summary}</p>
+            <p className="text-sm text-gray-600 mb-3 whitespace-pre-line">{memo.summary}</p>
 
             {memo.examples && (
               <div className="mb-3">
@@ -133,7 +170,16 @@ export default function Home() {
               </div>
             )}
 
-            <p className="text-xs text-gray-400 mt-3">{new Date(memo.created_at).toLocaleDateString('ja-JP')}</p>
+            <div className="flex justify-between items-center mt-3">
+              <p className="text-xs text-gray-400">{new Date(memo.created_at).toLocaleDateString('ja-JP')}</p>
+              <button
+                onClick={() => deepenMore(memo)}
+                disabled={deepeningId === memo.id}
+                className="text-xs text-blue-500 hover:text-blue-700 disabled:opacity-50"
+              >
+                {deepeningId === memo.id ? '深掘り中...' : 'もっと詳しく'}
+              </button>
+            </div>
           </div>
         ))}
       </div>
