@@ -113,9 +113,11 @@ export default function Home() {
             {memo.links && (
               <div className="mb-3">
                 <p className="text-xs font-medium text-gray-400 mb-1">参考リンク</p>
-                <ul className="text-sm text-blue-500 list-disc list-inside">
+                <ul className="text-sm list-disc list-inside">
                   {memo.links.split('||').map((link: string) => (
-                    <li key={link}>{link}</li>
+                    <li key={link}>
+                      <a href={"https://www.google.com/search?q=" + encodeURIComponent(link)} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">{link}</a>
+                    </li>
                   ))}
                 </ul>
               </div>
