@@ -1,9 +1,27 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { NextRequest, NextResponse } from 'next/server'
+import { Client } from '@notionhq/client'
 
-const client = new Anthropic({
+const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
+
+const notion = new Client({
+  auth: process.env.NOTION_API_KEY,
+})
+
+const NOTION_DATABASE_ID = process.env.NOTION_DATABASE_ID!
+
+function detectCategory(tags: string[]): string {
+  const tagStr = tags.join(',').toLowerCase()
+  if (tagStr.match(/デザイン|建築|家具|インテリア|アート|グラフィック/)) return 'デザイン'
+  if (tagStr.match(/ux|ui|インタラクション|ユーザー|アプリ/)) return 'UX・UI'
+  if (tagStr.match(/自然|植物|ガーデン|環境|エコ/)) return '自然・環境'
+  if (tagStr.match(/技術|ai|プログラム|デジタル|テック/)) return 'テクノロジー'
+  if (tagStr.match(/教育|学習|授業|研究|大学/)) return '教育・研究'
+  if (tagStr.match(/ビジネス|経営|マーケ|ブランド/)) return 'ビジネス'
+  return 'その他'
+}
 
 export async function POST(request: NextRequest) {
   const { keyword, mode, existing } = await request.json()
@@ -27,7 +45,7 @@ export async function POST(request: NextRequest) {
 {"summary":"新しい観点での深掘り内容を3〜5文で","examples":["新しい事例1","新しい事例2","新しい事例3"],"links":["参考1","参考2"],"tags":["タグ1","タグ2","タグ3"]}`
     : `以下のキーワードについて日本語で答えてください。キーワード：「${keyword}」\n\n必ずJSON形式のみで返してください。説明文や\`\`\`は不要です。\n\n{"summary":"概要を2〜3文で","examples":["事例1","事例2","事例3"],"links":["参考1","参考2"],"tags":["タグ1","タグ2","タグ3"]}`
 
-  const message = await client.messages.create({
+  const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-5',
     max_tokens: 1024,
     messages: [{ role: 'user', content: prompt }],
@@ -35,16 +53,40 @@ export async function POST(request: NextRequest) {
 
   const text = message.content[0].type === 'text' ? message.content[0].text : '{}'
 
+  let result
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/)
-    const result = JSON.parse(jsonMatch ? jsonMatch[0] : '{}')
-    return NextResponse.json(result)
+    result = JSON.parse(jsonMatch ? jsonMatch[0] : '{}')
   } catch {
-    return NextResponse.json({
-      summary: text,
-      examples: [],
-      links: [],
-      tags: [],
+    result = { summary: text, examples: [], links: [], tags: [] }
+  }
+
+  if (mode !== 'more') {
+    const category = detectCategory(result.tags || [])
+    await notion.pages.create({
+      parent: { database_id: NOTION_DATABASE_ID },
+      properties: {
+        名前: {
+          title: [{ text: { content: keyword } }],
+        },
+        概要: {
+          rich_text: [{ text: { content: result.summary || '' } }],
+        },
+        カテゴリ: {
+          select: { name: category },
+        },
+        タグ: {
+          multi_select: (result.tags || []).map((tag: string) => ({ name: tag })),
+        },
+        事例: {
+          rich_text: [{ text: { content: (result.examples || []).join('\n') } }],
+        },
+        参考リンク: {
+          rich_text: [{ text: { content: (result.links || []).join('\n') } }],
+        },
+      },
     })
   }
+
+  return NextResponse.json(result)
 }
