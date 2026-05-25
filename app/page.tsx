@@ -10,6 +10,8 @@ const supabase = createClient(
 
 export default function Home() {
   const [keyword, setKeyword] = useState('')
+  const [hint1, setHint1] = useState('')
+  const [hint2, setHint2] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [deepeningId, setDeepeningId] = useState<number | null>(null)
@@ -35,7 +37,7 @@ export default function Home() {
     const res = await fetch('/api/deepen', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keyword, mode: 'normal' }),
+      body: JSON.stringify({ keyword, hint1, hint2, mode: 'normal' }),
     })
     const result = await res.json()
 
@@ -49,6 +51,8 @@ export default function Home() {
 
     setMessage('保存しました！')
     setKeyword('')
+    setHint1('')
+    setHint2('')
     setLoading(false)
     loadMemos()
   }
@@ -101,10 +105,22 @@ export default function Home() {
 
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
         <input
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-3 outline-none"
+          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-2 outline-none"
           placeholder="キーワードを入力…"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
+        />
+        <input
+          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-2 outline-none text-gray-400"
+          placeholder="補助情報1（例：音楽ジャンル）"
+          value={hint1}
+          onChange={(e) => setHint1(e.target.value)}
+        />
+        <input
+          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-3 outline-none text-gray-400"
+          placeholder="補助情報2（例：1970年代 ブライアン・イーノ）"
+          value={hint2}
+          onChange={(e) => setHint2(e.target.value)}
         />
         <button
           className="w-full text-sm bg-gray-800 text-white rounded-lg py-2 disabled:opacity-50"
@@ -153,7 +169,14 @@ export default function Home() {
                 <ul className="text-sm list-disc list-inside">
                   {memo.links.split('||').map((link: string) => (
                     <li key={link}>
-                      <a href={"https://www.google.com/search?q=" + encodeURIComponent(link)} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">{link}</a>
+                      <a
+                        href={"https://www.google.com/search?q=" + encodeURIComponent(link)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 underline"
+                      >
+                        {link}
+                      </a>
                     </li>
                   ))}
                 </ul>

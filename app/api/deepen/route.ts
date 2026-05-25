@@ -24,7 +24,13 @@ function detectCategory(tags: string[]): string {
 }
 
 export async function POST(request: NextRequest) {
-  const { keyword, mode, existing } = await request.json()
+  const { keyword, hint1, hint2, mode, existing } = await request.json()
+
+  // 補助情報を組み立てる
+  const hints = [hint1, hint2].filter(Boolean)
+  const hintText = hints.length > 0
+    ? `\n補助情報（精度向上のための文脈）：${hints.join('、')}\n上記の補助情報を参考にしてキーワードを正しく解釈し、深掘りしてください。`
+    : ''
 
   const prompt = mode === 'more'
     ? `以下のキーワードについて、すでにある情報とは異なる新しい観点で深掘りしてください。
@@ -43,7 +49,13 @@ export async function POST(request: NextRequest) {
 必ずJSON形式のみで返してください。
 
 {"summary":"新しい観点での深掘り内容を3〜5文で","examples":["新しい事例1","新しい事例2","新しい事例3"],"links":["参考1","参考2"],"tags":["タグ1","タグ2","タグ3"]}`
-    : `以下のキーワードについて日本語で答えてください。キーワード：「${keyword}」\n\n必ずJSON形式のみで返してください。説明文や\`\`\`は不要です。\n\n{"summary":"概要を2〜3文で","examples":["事例1","事例2","事例3"],"links":["参考1","参考2"],"tags":["タグ1","タグ2","タグ3"]}`
+    : `以下のキーワードについて日本語で答えてください。
+
+キーワード：「${keyword}」${hintText}
+
+必ずJSON形式のみで返してください。説明文や\`\`\`は不要です。
+
+{"summary":"概要を2〜3文で","examples":["事例1","事例2","事例3"],"links":["参考1","参考2"],"tags":["タグ1","タグ2","タグ3"]}`
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-5',
@@ -61,6 +73,7 @@ export async function POST(request: NextRequest) {
     result = { summary: text, examples: [], links: [], tags: [] }
   }
 
+  // Notionにはキーワードのみ保存（補助情報は含めない）
   if (mode !== 'more') {
     const category = detectCategory(result.tags || [])
     await notion.pages.create({
