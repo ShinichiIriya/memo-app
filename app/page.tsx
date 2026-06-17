@@ -12,7 +12,6 @@ export default function Home() {
   const [keyword, setKeyword] = useState('')
   const [hint1, setHint1] = useState('')
   const [hint2, setHint2] = useState('')
-  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [deepeningId, setDeepeningId] = useState<number | null>(null)
   const [memos, setMemos] = useState<any[]>([])
@@ -32,7 +31,6 @@ export default function Home() {
   async function saveMemo() {
     if (!keyword) return
     setLoading(true)
-    setMessage('Claudeが深掘り中...')
 
     const res = await fetch('/api/deepen', {
       method: 'POST',
@@ -49,7 +47,6 @@ export default function Home() {
       links: result.links.join('||'),
     })
 
-    setMessage('保存しました！')
     setKeyword('')
     setHint1('')
     setHint2('')
@@ -71,7 +68,7 @@ export default function Home() {
     })
     const result = await res.json()
 
-    const newSummary = memo.summary + '\n\n【追加深掘り】\n' + result.summary
+    const newSummary = memo.summary + '\n\n— もっと深く\n' + result.summary
     const newExamples = memo.examples
       ? memo.examples + '||' + result.examples.join('||')
       : result.examples.join('||')
@@ -99,112 +96,168 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-8 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">メモ拡張</h1>
-      <p className="text-gray-500 mb-8">気になるキーワードを入れると、Claudeが深掘りしてくれます。</p>
+    <main style={{ minHeight: '100vh', background: '#fafafa', padding: '4rem 1.5rem' }}>
+      <div style={{ maxWidth: '640px', margin: '0 auto' }}>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-        <input
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-2 outline-none"
-          placeholder="キーワードを入力…"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
-        <input
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-2 outline-none text-gray-400"
-          placeholder="補助情報1（例：音楽ジャンル）"
-          value={hint1}
-          onChange={(e) => setHint1(e.target.value)}
-        />
-        <input
-          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-3 outline-none text-gray-400"
-          placeholder="補助情報2（例：1970年代 ブライアン・イーノ）"
-          value={hint2}
-          onChange={(e) => setHint2(e.target.value)}
-        />
-        <button
-          className="w-full text-sm bg-gray-800 text-white rounded-lg py-2 disabled:opacity-50"
-          onClick={saveMemo}
-          disabled={loading}
-        >
-          {loading ? 'Claudeが考え中...' : '深掘りして保存'}
-        </button>
-      </div>
+        <h1 style={{ fontSize: '28px', fontWeight: 700, letterSpacing: '0.01em', color: '#111', marginBottom: '48px' }}>
+          altmemo
+        </h1>
+        
 
-      {message && <p className="text-sm text-green-600 mb-4">{message}</p>}
+        <div style={{ marginBottom: '64px' }}>
+          <input
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="気になるキーワード"
+            style={{
+              width: '100%',
+              border: 'none',
+              borderBottom: '1px solid #e5e5e5',
+              padding: '8px 0',
+              fontSize: '17px',
+              color: '#111',
+              outline: 'none',
+              background: 'transparent',
+              marginBottom: '12px',
+            }}
+          />
+          <input
+            value={hint1}
+            onChange={(e) => setHint1(e.target.value)}
+            placeholder="補助情報1（例：音楽ジャンル）"
+            style={{
+              width: '100%',
+              border: 'none',
+              borderBottom: '1px solid #f0f0f0',
+              padding: '6px 0',
+              fontSize: '13px',
+              color: '#999',
+              outline: 'none',
+              background: 'transparent',
+              marginBottom: '8px',
+            }}
+          />
+          <input
+            value={hint2}
+            onChange={(e) => setHint2(e.target.value)}
+            placeholder="補助情報2（例：1970年代 ブライアン・イーノ）"
+            style={{
+              width: '100%',
+              border: 'none',
+              borderBottom: '1px solid #f0f0f0',
+              padding: '6px 0',
+              fontSize: '13px',
+              color: '#999',
+              outline: 'none',
+              background: 'transparent',
+              marginBottom: '16px',
+            }}
+          />
+          <button
+            onClick={saveMemo}
+            disabled={loading || !keyword}
+            style={{
+              fontSize: '13px',
+              color: loading || !keyword ? '#ccc' : '#111',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: loading || !keyword ? 'default' : 'pointer',
+            }}
+          >
+            {loading ? '考えています…' : '深める →'}
+          </button>
+        </div>
 
-      <div className="flex flex-col gap-4">
-        {memos.map((memo) => (
-          <div key={memo.id} className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex justify-between items-start mb-2">
-              <p className="font-medium text-gray-800">{memo.keyword}</p>
-              <button
-                onClick={() => {
-                  if (confirm(`「${memo.keyword}」を削除しますか？`)) {
-                    deleteMemo(memo.id)
-                  }
-                }}
-                className="text-xs text-gray-400 hover:text-red-500 ml-4"
-              >
-                削除
-              </button>
-            </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {memos.map((memo) => (
+            <div
+              key={memo.id}
+              style={{
+                background: '#fff',
+                border: '1px solid #eee',
+                borderRadius: '16px',
+                padding: '28px 28px 20px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '16px' }}>
+                <h2 style={{ fontSize: '17px', fontWeight: 500, color: '#111', margin: 0 }}>
+                  {memo.keyword}
+                </h2>
+                <button
+                  onClick={() => {
+                    if (confirm(`「${memo.keyword}」を削除しますか？`)) deleteMemo(memo.id)
+                  }}
+                  style={{ fontSize: '12px', color: '#ccc', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  削除
+                </button>
+              </div>
 
-            <p className="text-sm text-gray-600 mb-3 whitespace-pre-line">{memo.summary}</p>
+              <p style={{ fontSize: '14px', lineHeight: 1.8, color: '#444', whiteSpace: 'pre-line', marginBottom: '20px' }}>
+                {memo.summary}
+              </p>
 
-            {memo.examples && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-400 mb-1">具体的な事例</p>
-                <ul className="text-sm text-gray-600 list-disc list-inside">
-                  {memo.examples.split('||').map((ex: string) => (
-                    <li key={ex}>{ex}</li>
+              {memo.examples && (
+                <div style={{ marginBottom: '16px' }}>
+                  <p style={{ fontSize: '11px', color: '#bbb', marginBottom: '6px', letterSpacing: '0.05em' }}>事例</p>
+                  <ul style={{ fontSize: '13px', color: '#555', paddingLeft: '16px', margin: 0, lineHeight: 1.8 }}>
+                    {memo.examples.split('||').map((ex: string, i: number) => (
+                      <li key={i}>{ex}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {memo.links && (
+                <div style={{ marginBottom: '16px' }}>
+                  <p style={{ fontSize: '11px', color: '#bbb', marginBottom: '6px', letterSpacing: '0.05em' }}>参考</p>
+                  <ul style={{ fontSize: '13px', paddingLeft: '16px', margin: 0, lineHeight: 1.8 }}>
+                    {memo.links.split('||').map((link: string, i: number) => (
+                      <li key={i}><a
+                        
+                          href={"https://www.google.com/search?q=" + encodeURIComponent(link)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#888', textDecoration: 'underline' }}
+                        >
+                          {link}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {memo.tags && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                  {memo.tags.split(',').map((tag: string, i: number) => (
+                    <span
+                      key={i}
+                      style={{ fontSize: '11px', color: '#999', background: '#f5f5f5', padding: '4px 10px', borderRadius: '20px' }}
+                    >
+                      {tag}
+                    </span>
                   ))}
-                </ul>
-              </div>
-            )}
+                </div>
+              )}
 
-            {memo.links && (
-              <div className="mb-3">
-                <p className="text-xs font-medium text-gray-400 mb-1">参考リンク</p>
-                <ul className="text-sm list-disc list-inside">
-                  {memo.links.split('||').map((link: string) => (
-                    <li key={link}>
-                      <a
-                        href={"https://www.google.com/search?q=" + encodeURIComponent(link)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 underline"
-                      >
-                        {link}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid #f3f3f3' }}>
+                <p style={{ fontSize: '11px', color: '#ccc', margin: 0 }}>
+                  {new Date(memo.created_at).toLocaleDateString('ja-JP')}
+                </p>
+                <button
+                  onClick={() => deepenMore(memo)}
+                  disabled={deepeningId === memo.id}
+                  style={{ fontSize: '12px', color: deepeningId === memo.id ? '#ccc' : '#111', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  {deepeningId === memo.id ? '深めています…' : 'もっと深める →'}
+                </button>
               </div>
-            )}
-
-            {memo.tags && (
-              <div className="flex gap-2 flex-wrap mt-2">
-                {memo.tags.split(',').map((tag: string) => (
-                  <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <div className="flex justify-between items-center mt-3">
-              <p className="text-xs text-gray-400">{new Date(memo.created_at).toLocaleDateString('ja-JP')}</p>
-              <button
-                onClick={() => deepenMore(memo)}
-                disabled={deepeningId === memo.id}
-                className="text-xs text-blue-500 hover:text-blue-700 disabled:opacity-50"
-              >
-                {deepeningId === memo.id ? '深掘り中...' : 'もっと詳しく'}
-              </button>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
       </div>
     </main>
   )
