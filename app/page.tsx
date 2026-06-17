@@ -130,7 +130,7 @@ export default function Home() {
               border: 'none',
               borderBottom: '1px solid #f0f0f0',
               padding: '6px 0',
-              fontSize: '13px',
+              fontSize: '16px',
               color: '#999',
               outline: 'none',
               background: 'transparent',
@@ -146,7 +146,7 @@ export default function Home() {
               border: 'none',
               borderBottom: '1px solid #f0f0f0',
               padding: '6px 0',
-              fontSize: '13px',
+              fontSize: '16px',
               color: '#999',
               outline: 'none',
               background: 'transparent',
@@ -176,8 +176,8 @@ style={{
             <div
               key={memo.id}
               style={{
-                background: '#fff',
-                border: '1px solid #eee',
+                background: '#d8dcd3',
+                border: '1px solid #c4c4c4',
                 borderRadius: '16px',
                 padding: '28px 28px 20px',
               }}
