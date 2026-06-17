@@ -153,19 +153,21 @@ export default function Home() {
               marginBottom: '16px',
             }}
           />
-          <button
+ <button
             onClick={saveMemo}
             disabled={loading || !keyword}
-            style={{
+style={{
               fontSize: '13px',
-              color: loading || !keyword ? '#ccc' : '#111',
-              background: 'none',
+              fontWeight: 600,
+              color: '#fff',
+              background: loading || !keyword ? '#ccc' : '#000000',
               border: 'none',
-              padding: 0,
+              borderRadius: '20px',
+              padding: '8px 20px',
               cursor: loading || !keyword ? 'default' : 'pointer',
             }}
           >
-            {loading ? '考えています…' : '深める →'}
+            {loading ? 'Exploring…' : 'Explore →'}
           </button>
         </div>
 
